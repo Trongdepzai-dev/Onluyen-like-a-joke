@@ -339,6 +339,11 @@
     <div class="website-list" id="website-list">
       <!-- Buttons dynamically inserted -->
     </div>
+
+    <h2 style="font-size: 1.5rem; margin: 36px 0 24px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">AI Giải Toán</h2>
+    <div class="website-list" id="math-solver-list">
+      <!-- Math solver buttons dynamically inserted -->
+    </div>
     
     <button class="cancel-button" id="cancel">Cancel</button>
     
@@ -353,10 +358,15 @@
       'DeepSeek': 'https://chat.deepseek.com/',
       'Perplexity': 'https://www.perplexity.ai/',
       'Claude': 'https://claude.ai/new',
-      'Grok': 'https://grok.com/'
+      'Grok': 'https://grok.com/',
+      'B.Trọng AI Chat': 'https://chic-duckanoo-d4a896.netlify.app/',
+      'Math.Now': 'https://math.now/vi',
+      'Symbolab AI Chat': 'https://www.symbolab.com/ai-chat',
+      'Mathway Algebra': 'https://www.mathway.com/Algebra'
     };
 
     const websiteList = document.getElementById('website-list');
+    const mathSolverList = document.getElementById('math-solver-list');
     const particlesContainer = document.getElementById('particles');
 
     // Create floating particles
@@ -407,7 +417,11 @@
         }, 300);
       });
       
-      websiteList.appendChild(button);
+      if (['Math.Now', 'Symbolab AI Chat', 'Mathway Algebra'].includes(name)) {
+        mathSolverList.appendChild(button);
+      } else {
+        websiteList.appendChild(button);
+      }
     }
 
     document.getElementById('cancel').addEventListener('click', () => {

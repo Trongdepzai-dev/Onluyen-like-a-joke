@@ -394,12 +394,16 @@ ipcMain.on('prochat-website-selected', (event, website) => {
         'DeepSeek': 'https://chat.deepseek.com/',
         'Perplexity': 'https://www.perplexity.ai/',
         'Claude': 'https://claude.ai/new',
-        'Grok': 'https://grok.com/'
+        'Grok': 'https://grok.com/',
+        'B.Trọng AI Chat': 'https://chic-duckanoo-d4a896.netlify.app/',
+        'Math.Now': 'https://math.now/vi',
+        'Symbolab AI Chat': 'https://www.symbolab.com/ai-chat',
+        'Mathway Algebra': 'https://www.mathway.com/Algebra'
     };
 
     const url = websites[website];
     if (url) {
-        const incognito = website === 'Lmarena';
+        const incognito = (website === 'Lmarena' || website === 'B.Trọng AI Chat' || website === 'Math.Now' || website === 'Symbolab AI Chat' || website === 'Mathway Algebra');
         createChatWindow(url, incognito);
     }
 

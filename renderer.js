@@ -548,7 +548,24 @@ async function handleScreenshot() {
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.classList.add('notification', type);
-    notification.textContent = message;
+
+    const content = document.createElement('div');
+    content.classList.add('notification-content');
+
+    const icon = document.createElement('span');
+    icon.classList.add('notification-icon');
+    if (type === 'success') {
+        icon.textContent = '\u2713'; // Checkmark
+    } else if (type === 'error') {
+        icon.textContent = '\u2716'; // X mark
+    }
+    content.appendChild(icon);
+
+    const text = document.createElement('span');
+    text.textContent = message;
+    content.appendChild(text);
+
+    notification.appendChild(content);
     notificationContainer.appendChild(notification);
 
     // Force reflow to trigger CSS transition
