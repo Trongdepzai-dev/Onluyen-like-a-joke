@@ -30,7 +30,7 @@ function dataUriToGenerativePart(dataUri) {
 
 // --- STATE ---
 let mainWindow;
-let proChatWindow;
+let chatWindows = {};
 let isBlockingNetwork = false;
 let requestQueue = [];
 
@@ -77,36 +77,6 @@ function setupHeaderBypass() {
 }
 
 
-// 🪟 Tạo cửa sổ Pro-Chat
-async function createProChatWindow() {
-    if (proChatWindow) {
-        proChatWindow.focus();
-        return;
-    }
-
-    const partition = `prochat-${Date.now()}`;
-    const proChatSession = session.fromPartition(partition);
-
-  proChatWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    backgroundColor: '#121212',
-    title: 'Pro-Chat',
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'Pro-Chat', 'preload.js'),
-      partition: partition
-    }
-  });
-
-  // Load trực tiếp trang mục tiêu
-  proChatWindow.loadURL('https://lmarena.ai/');
-
-  proChatWindow.on('closed', () => {
-    proChatWindow = null;
-  });
-}
 
 
 // --- GEMINI API HANDLER ---
@@ -357,8 +327,57 @@ ipcMain.on('clear-request-queue', () => {
     sendQueueToRenderer();
 });
 
-ipcMain.on('open-prochat-window', () => {
-    createProChatWindow();
+function createChatWindow(url, incognito) {
+    const partition = incognito ? `incognito-${Date.now()}` : `persist:${new URL(url).hostname}`;
+
+    if (chatWindows[partition] && !chatWindows[partition].isDestroyed()) {
+        chatWindows[partition].focus();
+        return;
+    }
+
+    const newWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        webPreferences: {
+            partition: partition,
+            preload: path.join(__dirname, 'Pro-Chat', 'preload.js'),
+        }
+    });
+
+    newWindow.loadURL(url);
+
+    newWindow.on('closed', () => {
+        delete chatWindows[partition];
+    });
+
+    chatWindows[partition] = newWindow;
+}
+
+ipcMain.on('open-prochat-window', async (event) => {
+    const websites = {
+        'Lmarena': 'https://lmarena.ai/',
+        'Gemini': 'https://gemini.google.com/app?hl=vi',
+        'ChatGPT': 'https://chatgpt.com/',
+        'DeepSeek': 'https://chat.deepseek.com/',
+        'Perplexity': 'https://www.perplexity.ai/',
+        'Claude': 'https://claude.ai/new',
+        'Grok': 'https://grok.com/'
+    };
+
+    const { response } = await dialog.showMessageBox({
+        type: 'question',
+        buttons: ['Cancel', ...Object.keys(websites)],
+        defaultId: 1,
+        title: 'Choose a website',
+        message: 'Choose a website to open:'
+    });
+
+    if (response > 0) {
+        const choice = Object.keys(websites)[response - 1];
+        const url = websites[choice];
+        const incognito = choice === 'Lmarena';
+        createChatWindow(url, incognito);
+    }
 });
 
 ipcMain.on('save-screenshot', async (event, dataUrl) => {
