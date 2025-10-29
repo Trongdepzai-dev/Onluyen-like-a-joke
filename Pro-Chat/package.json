@@ -1,0 +1,14 @@
+{
+  "name": "electron-xfo-bypass",
+  "version": "1.0.0",
+  "description": "Simple Electron app that removes X-Frame-Options / CSP from responses to allow embedding in iframe/webview",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Bạn",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^26.0.0"
+  }
+}

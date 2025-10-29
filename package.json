@@ -1,0 +1,34 @@
+{
+  "name": "electron-browser",
+  "version": "1.0.0",
+  "description": "Browser with network blocking",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never"
+  },
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "@google/generative-ai": "latest"
+  },
+  "build": {
+    "appId": "com.example.browser",
+    "productName": "OnLuyen Browser",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

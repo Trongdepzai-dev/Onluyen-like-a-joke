@@ -1,0 +1,1 @@
+Run 'npm install' then 'npm start'. Electron is a devDependency; you can 'npm i --save-dev electron@latest' if needed.
