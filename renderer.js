@@ -1,6 +1,6 @@
 
 // Renderer process script
-let webview, urlInput, goBtn, backBtn, forwardBtn, reloadBtn, homeBtn, blockNetworkBtn, statusText, statusDot, scrapeBtn, settingsBtn, apiKeyModal, closeModalBtn, saveApiKeyBtn, apiKeyInput, modelSelect, visionModelSelect, deepReasoningToggle, fastModeToggle, googleSearchToggle, chatBtn, chatPopup, chatPopupHeader, chatPopupCloseBtn, chatMessages, chatPromptInput, chatSendBtn, chatScreenshotBtn, advancedNetworkToggleBtn, advancedNetworkPanel, requestCounter, clearRequestsBtn, requestList, screenshotBtn;
+let webview, urlInput, goBtn, backBtn, forwardBtn, reloadBtn, homeBtn, blockNetworkBtn, statusText, statusDot, scrapeBtn, settingsBtn, apiKeyModal, closeModalBtn, saveApiKeyBtn, apiKeyInput, modelSelect, visionModelSelect, deepReasoningToggle, fastModeToggle, googleSearchToggle, chatBtn, chatPopup, chatPopupHeader, chatPopupCloseBtn, chatMessages, chatPromptInput, chatSendBtn, chatScreenshotBtn, advancedNetworkToggleBtn, advancedNetworkPanel, requestCounter, clearRequestsBtn, requestList, screenshotBtn, notificationContainer;
 let lsRefreshBtn, lsAddBtn, lsDeleteBtn, lsKeySelect, lsKeyInput, lsValueInput, lsSaveBtn;
 
 let isNetworkBlocked = false;
@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     lsValueInput = document.getElementById('ls-value-input');
     lsSaveBtn = document.getElementById('ls-save-btn');
     screenshotBtn = document.getElementById('screenshot-btn');
+    notificationContainer = document.getElementById('notification-container');
 
     const preloadPath = await window.electronAPI.getPreloadPath();
     webview.setAttribute('preload', preloadPath);
@@ -144,6 +145,8 @@ function initializeControls() {
     });
 
     chatScreenshotBtn.addEventListener('click', handleChatScreenshot);
+
+    screenshotBtn.addEventListener('click', handleScreenshot);
 
     // Make chat popup draggable
     let isDragging = false;
@@ -512,118 +515,6 @@ window.electronAPI.onVisionStreamChunk(({ text }) => {
     }
 });
 
-window.electronAPI.onVisionStreamEnd(() => {
-    console.log('Chat stream finished.');
-    // Re-enable buttons and remove typing indicator
-    chatSendBtn.disabled = false;
-    chatScreenshotBtn.disabled = false;
-    if (streamingAIMessage) {
-        const typingIndicator = streamingAIMessage.querySelector('.typing-indicator');
-        if(typingIndicator) {
-            typingIndicator.remove();
-        }
-        streamingAIMessage = null;
-    }
-});
-
-
-
-function addMessageToChat(sender, { text, image, isTyping = false }) {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('chat-message', sender);
-
-    const contentElement = document.createElement('div');
-    contentElement.classList.add('message-content');
-
-    if (image) {
-        const imageElement = document.createElement('div');
-        imageElement.classList.add('message-image');
-        imageElement.innerHTML = `<img src="${image}" alt="screenshot">`;
-        contentElement.appendChild(imageElement);
-    }
-
-    if (text) {
-        const textElement = document.createElement('div');
-        textElement.innerHTML = text;
-        contentElement.appendChild(textElement);
-    }
-
-    if (isTyping) {
-        const typingIndicatorElement = document.createElement('div');
-        typingIndicatorElement.classList.add('typing-indicator');
-        typingIndicatorElement.innerHTML = '<span></span><span></span><span></span>';
-        contentElement.appendChild(typingIndicatorElement);
-    }
-    
-    messageElement.appendChild(contentElement);
-    chatMessages.appendChild(messageElement);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    return messageElement;
-}
-
-async function handleChatScreenshot() {
-    try {
-        const image = await webview.capturePage();
-        currentChatImage = image.toDataURL();
-        addMessageToChat('user', { image: currentChatImage });
-    } catch (error) {
-        console.error('Failed to capture page for chat:', error);
-    }
-}
-
-async function handleChatSend() {
-    const promptText = chatPromptInput.value.trim();
-    if (!currentChatImage && !promptText) return;
-
-    addMessageToChat('user', { text: promptText });
-    chatPromptInput.value = '';
-
-    // Disable buttons and show typing indicator
-    chatSendBtn.disabled = true;
-    chatScreenshotBtn.disabled = true;
-    streamingAIMessage = addMessageToChat('ai', { text: '', isTyping: true });
-
-    window.electronAPI.streamVisionGemini({ image: currentChatImage, prompt: promptText });
-    currentChatImage = null; // Reset image after sending
-}
-
-window.electronAPI.onVisionStreamChunk(({ text }) => {
-    if (streamingAIMessage) {
-        const contentElement = streamingAIMessage.querySelector('.message-content');
-        if (contentElement) {
-            // Remove typing indicator if present
-            const typingIndicator = contentElement.querySelector('.typing-indicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-
-            // Append new text and re-render markdown
-            const rawText = (contentElement.dataset.rawText || '') + text;
-            contentElement.dataset.rawText = rawText;
-            if (typeof marked !== 'undefined') {
-                contentElement.innerHTML = marked.parse(rawText);
-            } else {
-                contentElement.textContent = rawText;
-            }
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-    }
-});
-
-window.electronAPI.onVisionStreamEnd(() => {
-    console.log('Chat stream finished.');
-    // Re-enable buttons and remove typing indicator
-    chatSendBtn.disabled = false;
-    chatScreenshotBtn.disabled = false;
-    if (streamingAIMessage) {
-        const typingIndicator = streamingAIMessage.querySelector('.typing-indicator');
-        if(typingIndicator) {
-            typingIndicator.remove();
-        }
-        streamingAIMessage = null;
-    }
-});
-
 window.electronAPI.onVisionStreamError(({ message }) => {
     if (streamingAIMessage) {
         const contentElement = streamingAIMessage.querySelector('.message-content');
@@ -640,5 +531,38 @@ window.electronAPI.onVisionStreamError(({ message }) => {
     chatScreenshotBtn.disabled = false;
     streamingAIMessage = null;
 });
+
+async function handleScreenshot() {
+    try {
+        const image = await webview.capturePage();
+        const dataUrl = image.toDataURL();
+        const blob = await (await fetch(dataUrl)).blob();
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showNotification('Đã chụp ảnh màn hình và sao chép vào clipboard!', 'success');
+    } catch (error) {
+        console.error('Failed to capture page for screenshot:', error);
+        showNotification('Không thể chụp ảnh màn hình.', 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.classList.add('notification', type);
+    notification.textContent = message;
+    notificationContainer.appendChild(notification);
+
+    // Force reflow to trigger CSS transition
+    void notification.offsetWidth;
+
+    notification.classList.add('show');
+
+    setTimeout(() => {
+        notification.classList.remove('show');
+        notification.classList.add('hide');
+        notification.addEventListener('transitionend', () => {
+            notification.remove();
+        });
+    }, 3000); // Notification disappears after 3 seconds
+}
 
 

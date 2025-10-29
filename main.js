@@ -353,7 +353,37 @@ function createChatWindow(url, incognito) {
     chatWindows[partition] = newWindow;
 }
 
-ipcMain.on('open-prochat-window', async (event) => {
+let proChatPromptWindow = null;
+
+ipcMain.on('open-prochat-window', () => {
+    if (proChatPromptWindow) {
+        proChatPromptWindow.focus();
+        return;
+    }
+
+    proChatPromptWindow = new BrowserWindow({
+        width: 480,
+        height: 320,
+        parent: mainWindow,
+        modal: true,
+        frame: false,
+        resizable: false,
+        movable: false,
+        webPreferences: {
+            preload: path.join(__dirname, 'Pro-Chat', 'prochat-prompt-preload.js'),
+            contextIsolation: true,
+            nodeIntegration: false,
+        },
+    });
+
+    proChatPromptWindow.loadFile(path.join(__dirname, 'Pro-Chat', 'prochat-prompt.html'));
+
+    proChatPromptWindow.on('closed', () => {
+        proChatPromptWindow = null;
+    });
+});
+
+ipcMain.on('prochat-website-selected', (event, website) => {
     const websites = {
         'Lmarena': 'https://lmarena.ai/',
         'Gemini': 'https://gemini.google.com/app?hl=vi',
@@ -364,38 +394,24 @@ ipcMain.on('open-prochat-window', async (event) => {
         'Grok': 'https://grok.com/'
     };
 
-    const { response } = await dialog.showMessageBox({
-        type: 'question',
-        buttons: ['Cancel', ...Object.keys(websites)],
-        defaultId: 1,
-        title: 'Choose a website',
-        message: 'Choose a website to open:'
-    });
-
-    if (response > 0) {
-        const choice = Object.keys(websites)[response - 1];
-        const url = websites[choice];
-        const incognito = choice === 'Lmarena';
+    const url = websites[website];
+    if (url) {
+        const incognito = website === 'Lmarena';
         createChatWindow(url, incognito);
     }
-});
 
-ipcMain.on('save-screenshot', async (event, dataUrl) => {
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-        title: 'Save Screenshot',
-        defaultPath: `onluyen-screenshot-${Date.now()}.png`,
-        filters: [{ name: 'PNG Images', extensions: ['png'] }]
-    });
-
-    if (!canceled && filePath) {
-        const buffer = Buffer.from(dataUrl.split(',')[1], 'base64');
-        try {
-            await fs.writeFile(filePath, buffer);
-        } catch (error) {
-            console.error('Failed to save screenshot:', error);
-        }
+    if (proChatPromptWindow) {
+        proChatPromptWindow.close();
     }
 });
+
+ipcMain.on('prochat-prompt-close', () => {
+    if (proChatPromptWindow) {
+        proChatPromptWindow.close();
+    }
+});
+
+
 
 ipcMain.handle('get-scrape-script', () => fs.readFile(path.join(__dirname, 'onluyen.js'), 'utf-8'));
 ipcMain.handle('get-preload-path', () => path.join(__dirname, 'preload.js'));
