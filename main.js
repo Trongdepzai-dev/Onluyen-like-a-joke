@@ -338,6 +338,7 @@ function createChatWindow(url, incognito) {
     const newWindow = new BrowserWindow({
         width: 1200,
         height: 800,
+        alwaysOnTop: true,
         webPreferences: {
             partition: partition,
             preload: path.join(__dirname, 'Pro-Chat', 'preload.js'),
@@ -362,13 +363,15 @@ ipcMain.on('open-prochat-window', () => {
     }
 
     proChatPromptWindow = new BrowserWindow({
-        width: 480,
-        height: 320,
+        width: 400,
+        height: 550,
         parent: mainWindow,
         modal: true,
         frame: false,
         resizable: false,
-        movable: false,
+        movable: true,
+        alwaysOnTop: true,
+        center: true,
         webPreferences: {
             preload: path.join(__dirname, 'Pro-Chat', 'prochat-prompt-preload.js'),
             contextIsolation: true,
