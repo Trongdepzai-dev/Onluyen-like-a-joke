@@ -549,34 +549,45 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.classList.add('notification', type);
 
+    const icon = document.createElement('div');
+    icon.classList.add('notification-icon');
+    if (type === 'success') {
+        icon.textContent = '✓';
+    } else if (type === 'error') {
+        icon.textContent = '✕';
+    } else {
+        icon.textContent = 'ℹ';
+    }
+
     const content = document.createElement('div');
     content.classList.add('notification-content');
 
-    const icon = document.createElement('span');
-    icon.classList.add('notification-icon');
-    if (type === 'success') {
-        icon.textContent = '\u2713'; // Checkmark
-    } else if (type === 'error') {
-        icon.textContent = '\u2716'; // X mark
-    }
-    content.appendChild(icon);
+    const title = document.createElement('div');
+    title.classList.add('notification-title');
 
-    const text = document.createElement('span');
+    if (type === 'success') {
+        title.textContent = 'Thành công';
+    } else if (type === 'error') {
+        title.textContent = 'Lỗi';
+    } else {
+        title.textContent = 'Thông báo';
+    }
+
+    const text = document.createElement('div');
+    text.classList.add('notification-message');
     text.textContent = message;
+
+    content.appendChild(title);
     content.appendChild(text);
 
+    notification.appendChild(icon);
     notification.appendChild(content);
+
     notificationContainer.appendChild(notification);
 
-    // Force reflow to trigger CSS transition
-    void notification.offsetWidth;
-
-    notification.classList.add('show');
-
     setTimeout(() => {
-        notification.classList.remove('show');
         notification.classList.add('hide');
-        notification.addEventListener('transitionend', () => {
+        notification.addEventListener('animationend', () => {
             notification.remove();
         });
     }, 3000); // Notification disappears after 3 seconds
